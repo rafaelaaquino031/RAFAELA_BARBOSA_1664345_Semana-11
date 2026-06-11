@@ -1,19 +1,7 @@
-# RAFAELA_BARBOSA_1664345_Semana-11
-Criei o CineLog como projeto da disciplina de Desenvolvimento Web. O site reúne filmes que fazem parte de boas lembranças especiais da minha vida, com detalhes sobre cada produção e uma galeria de cenas selecionadas.
-
-Nome completo: Rafaela Aquino Barbosa
-Matricula: 927843
-Curso: Análise e Desenvolvimento de Sistemas  
-Disciplina: Desenvolvimento Web Front-End 
-Semestre: 2026/1
-![home page](image.png)
-![home page](image-1.png)
-![home page](image-3.png)
-![home page](image-2.png)
-![detalhes](image-4.png)
- 
- ```json
- 1,
+const dados = {
+  "filmes": [
+    {
+      "id": 1,
       "titulo": "Uma Segunda Chance",
       "descricao": "A emocionante jornada de Kenna Rowan em busca de redenção e do perdão de sua cidade natal.",
       "conteudo": "Kenna Rowan retorna do cárcere disposta a tudo para reconectar-se com a filha que nunca conheceu, enfrentando a rejeição feroz de todos à sua volta. Vanessa Caswill dirige um drama íntimo e comovente sobre segundas chances, culpa e a força do amor materno diante de um passado trágico.",
@@ -199,5 +187,178 @@ Semestre: 2026/1
       ]
     }
   ]
+};
+
+// ─── UTILITÁRIOS ───────────────────────────────────────────────────────────────
+
+function getStars(nota) {
+  const estrelas = Math.round(nota / 2);
+  return '★'.repeat(estrelas) + '☆'.repeat(5 - estrelas);
 }
-```
+
+function getQueryParam(param) {
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get(param);
+}
+
+// ─── INDEX.HTML ────────────────────────────────────────────────────────────────
+
+function montarSlider() {
+  const destaques = dados.filmes.filter(f => f.destaque);
+  const indicators = document.getElementById('carouselIndicators');
+  const inner = document.getElementById('carouselInner');
+
+  if (!indicators || !inner) return;
+
+  destaques.forEach((filme, index) => {
+    // Indicator
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.setAttribute('data-bs-target', '#heroCarousel');
+    btn.setAttribute('data-bs-slide-to', index);
+    if (index === 0) {
+      btn.classList.add('active');
+      btn.setAttribute('aria-current', 'true');
+    }
+    btn.setAttribute('aria-label', `Slide ${index + 1}`);
+    indicators.appendChild(btn);
+
+    // Slide
+    const item = document.createElement('div');
+    item.className = `carousel-item${index === 0 ? ' active' : ''}`;
+    item.innerHTML = `
+      <div class="slide-bg" style="background-image: url('${filme.imagem_principal}')"></div>
+      <div class="carousel-caption-custom">
+        <span class="slide-genero">${filme.genero}</span>
+        <h2 class="slide-titulo">${filme.titulo}</h2>
+        <p class="slide-desc">${filme.descricao}</p>
+        <div class="slide-meta">
+          <span class="slide-nota">${getStars(filme.nota)} ${filme.nota}</span>
+          <span class="slide-ano">${filme.ano}</span>
+        </div>
+        <a href="detalhe.html?id=${filme.id}" class="btn-ver">Ver Filme</a>
+      </div>
+    `;
+    inner.appendChild(item);
+  });
+}
+
+function montarCards() {
+  const container = document.getElementById('filmes-container');
+  if (!container) return;
+
+  dados.filmes.forEach(filme => {
+    const col = document.createElement('div');
+    col.className = 'col-12 col-sm-6 col-lg-4';
+    col.innerHTML = `
+      <div class="filme-card">
+        <a href="detalhe.html?id=${filme.id}" class="card-img-link">
+          <div class="card-poster">
+            <img src="${filme.imagem_principal}" alt="${filme.titulo}" loading="lazy">
+            <div class="card-overlay">
+              <span class="overlay-icon">▶</span>
+            </div>
+          </div>
+        </a>
+        <div class="card-info">
+          <div class="card-meta-top">
+            <span class="badge-genero">${filme.genero}</span>
+            <span class="card-ano">${filme.ano}</span>
+          </div>
+          <a href="detalhe.html?id=${filme.id}" class="card-titulo">${filme.titulo}</a>
+          <p class="card-desc">${filme.descricao}</p>
+          <div class="card-footer-info">
+            <span class="card-nota">${getStars(filme.nota)} <strong>${filme.nota}</strong></span>
+            <span class="card-duracao">⏱ ${filme.duracao}</span>
+          </div>
+        </div>
+      </div>
+    `;
+    container.appendChild(col);
+  });
+}
+
+// ─── DETALHE.HTML ──────────────────────────────────────────────────────────────
+
+function montarDetalhe() {
+  const id = parseInt(getQueryParam('id'));
+  const filme = dados.filmes.find(f => f.id === id);
+
+  if (!filme) {
+    document.getElementById('detalhe-container').innerHTML = `
+      <div class="erro-404">
+        <h2>Filme não encontrado</h2>
+        <a href="index.html">← Voltar ao catálogo</a>
+      </div>`;
+    return;
+  }
+
+  document.title = `${filme.titulo} — CineLog`;
+
+  // Hero
+  const hero = document.getElementById('detalhe-hero');
+  if (hero) {
+    hero.style.backgroundImage = `url('${filme.imagem_principal}')`;
+  }
+
+  // Título no hero
+  const heroTitulo = document.getElementById('hero-titulo');
+  if (heroTitulo) heroTitulo.textContent = filme.titulo;
+
+  const heroGenero = document.getElementById('hero-genero');
+  if (heroGenero) heroGenero.textContent = filme.genero;
+
+  // Informações gerais
+  const info = document.getElementById('info-container');
+  if (info) {
+    info.innerHTML = `
+      <div class="detalhe-poster">
+        <img src="${filme.imagem_principal}" alt="${filme.titulo}">
+      </div>
+      <div class="detalhe-dados">
+        <h1 class="detalhe-titulo">${filme.titulo}</h1>
+        <p class="detalhe-descricao">${filme.conteudo}</p>
+        <ul class="detalhe-lista">
+          <li><span class="label">🎬 Diretor</span><span class="valor">${filme.diretor}</span></li>
+          <li><span class="label">📅 Ano</span><span class="valor">${filme.ano}</span></li>
+          <li><span class="label">🎭 Gênero</span><span class="valor">${filme.genero}</span></li>
+          <li><span class="label">⏱ Duração</span><span class="valor">${filme.duracao}</span></li>
+          <li><span class="label">🌍 País</span><span class="valor">${filme.pais}</span></li>
+          <li><span class="label">⭐ Nota</span><span class="valor nota-valor">${getStars(filme.nota)} ${filme.nota}/10</span></li>
+        </ul>
+        <a href="index.html" class="btn-voltar">← Voltar ao catálogo</a>
+      </div>
+    `;
+  }
+
+  // Fotos
+  const fotosContainer = document.getElementById('fotos-container');
+  if (fotosContainer) {
+    filme.fotos.forEach(foto => {
+      const col = document.createElement('div');
+      col.className = 'col-12 col-sm-6 col-md-4';
+      col.innerHTML = `
+        <div class="foto-card">
+          <img src="${foto.imagem}" alt="${foto.titulo}" loading="lazy">
+          <p class="foto-titulo">${foto.titulo}</p>
+        </div>
+      `;
+      fotosContainer.appendChild(col);
+    });
+  }
+}
+
+// ─── INIT ──────────────────────────────────────────────────────────────────────
+
+document.addEventListener('DOMContentLoaded', () => {
+  const isIndex = document.getElementById('carouselInner');
+  const isDetalhe = document.getElementById('info-container');
+
+  if (isIndex) {
+    montarSlider();
+    montarCards();
+  }
+  if (isDetalhe) {
+    montarDetalhe();
+  }
+});
